@@ -1,7 +1,7 @@
 model:       apsim79
 weather:     /pysims/data/Data/Data/clim/
 soils:       /pysims/data/Data/Data/soils/
-refdata:     /pysims/data/Data/refdata
+refdata:     /pysims/data/Data/Data/refdata
 out_file:    apsim.out
 executable:  /Apsim79/Model/Apsim.exe
 outtypes:    .met,.apsim,.out,.json,.txt
