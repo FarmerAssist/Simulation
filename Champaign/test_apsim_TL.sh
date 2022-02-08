@@ -6,6 +6,6 @@ echo $DIRNAME
 
 mkdir "/pysims/data/${DIRNAME}"
 cd "/pysims/data/${DIRNAME}"
-#/pysims/data/pysims/pysims.py --param ../params.apsim.sample --campaign ../campaign_apsim --tlatidx $LAT --tlonidx $LON
+/pysims/data/pysims/pysims.py --param ../params.apsim.sample --campaign ../campaign_apsim --tlatidx $LAT --tlonidx $LON
 
 cd ..
