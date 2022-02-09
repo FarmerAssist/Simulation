@@ -12,7 +12,7 @@ num_years:   4
 scen_years:  4
 scens: 5
 
-delta:       "5,5" #"30,30"
+delta:       "80,80" #"30,30"
 tdelta:      "120,120"
 
 num_lats:    360

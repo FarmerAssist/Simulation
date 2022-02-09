@@ -1,7 +1,7 @@
 LAT="0025"
 LON="0046"
 Date=$(date +"%Y_%m_%d_%H%M")
-DIRNAME="run_${LAT}_${LON}_$Date"
+DIRNAME="Results/run_${LAT}_${LON}_$Date"
 echo $DIRNAME
 
 mkdir "/pysims/data/${DIRNAME}"
