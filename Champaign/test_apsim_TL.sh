@@ -1,3 +1,4 @@
+#!/bin/bash
 LAT=$1
 LON=$2
 
