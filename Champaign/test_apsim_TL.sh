@@ -1,6 +1,6 @@
 LAT="0025"
 LON="0046"
-Date=$(date +"%d-%m-%Y")
+Date=$(date +"%Y_%m_%d_%H%M")
 DIRNAME="run_${LAT}_${LON}_$Date"
 echo $DIRNAME
 
