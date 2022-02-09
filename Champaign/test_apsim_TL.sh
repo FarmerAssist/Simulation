@@ -1,5 +1,8 @@
-LAT=${1}
-LON=${2}
+LAT=$1
+LON=$2
+
+echo "The first fruit is: $1"
+echo "The second fruit is: $2"
 
 Date=$(date +"%Y_%m_%d_%H%M")
 DIRNAME="Results/run_${LAT}_${LON}_$Date"
