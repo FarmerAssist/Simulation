@@ -8,11 +8,11 @@ outtypes:    .met,.apsim,.out,.json,.txt
 exname_o :    test
 
 ref_year:    2015
-num_years:   2
-scen_years:  2
+num_years:   4
+scen_years:  4
 scens: 5
 
-delta:       "80,80" #"30,30"
+delta:       "5,5" #"30,30"
 tdelta:      "120,120"
 
 num_lats:    360
