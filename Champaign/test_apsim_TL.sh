@@ -14,7 +14,7 @@ fi
 
 
 Date2=$(date +"%H_%M")
-DIRNAME2="$DIRNAME/${LAT}_${LON}_$Date"
+DIRNAME2="$DIRNAME/${LAT}_${LON}_$Date2"
 echo $DIRNAME2
 
 mkdir "/pysims/data/${DIRNAME2}"
