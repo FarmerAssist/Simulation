@@ -13,8 +13,8 @@ if [ ! -d $DIRNAME ]; then
 fi
 
 
-Date2=$(date +"%Y_%m_%d_%H%M")
-DIRNAME2="$DIRNAME/run_${LAT}_${LON}_$Date"
+Date2=$(date +"%H_%M")
+DIRNAME2="$DIRNAME/${LAT}_${LON}_$Date"
 echo $DIRNAME2
 
 mkdir "/pysims/data/${DIRNAME2}"
