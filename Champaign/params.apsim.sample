@@ -12,7 +12,7 @@ num_years:   4
 scen_years:  4
 scens: 5
 
-delta:       "80,80" #"30,30"
+delta:       "60,60" #"30,30"
 tdelta:      "120,120"
 
 num_lats:    360
@@ -27,7 +27,10 @@ variables:   biomass,yield,planting_date,DaysAfterSowing,flowering_das,maturity_
 var_units:   "kg/ha,kg/ha,day,days,days,days,mm,oC,oC,MJ/m2,mm,mm,mm,kg/ha,kgN/ha,kgN2O/ha,kgN2O/ha,kgC/ha,kgC/ha"
 long_names:  "biomass,yield,DateOfPlanting,DaysAfterSowing,flowering_das,maturity_das,RainIn,Temp_year,TempIn,RadiationIn,IrrigationIn,WaterUse,actual_ET,FertiliserIn,NO3_leaching,N2Oemission_year,N2OemissionIn,CO2emission_year,CO2emissionIn"
 
-  
+checker:
+class: SimpleChecker
+simgfile: /pysims/data/Data/Data/masks/CornMask/crop_mask_2019.nc
+
 # Campaign translator
 tappcmp:
    class:         camp2json
