@@ -1,23 +1,361 @@
 <folder version="32" name="simulations">
+
 #foreach ($simulation in $experiments)
 	<simulation name="Generic">
-		<memo name="LOG">$experiments[0].log</memo>
+		<memo name="LOG">$simulation.log</memo>
 		<clock>
-			<start_date type="date" description="Enter the start date of the simulation">$experiments[0].startDate</start_date>
-			<end_date type="date" description="Enter the end date of the simulation">$experiments[0].endDate</end_date>
+			<start_date type="date" description="Enter the start date of the simulation">$simulation.startDate</start_date>
+			<end_date type="date" description="Enter the end date of the simulation">$simulation.endDate</end_date>
 		</clock>
-
-
-		<summaryfile />
-
-
-
-		<area name="paddock">
-
 		<metfile name="met">
 			<filename name="filename" input="yes">${simulation.weather.file}</filename>
 		</metfile>
+		<summaryfile />
+		 <manager2 name="Script(C#)" enabled="yes">
+      <ui>
+        <A type="text" description="Param A">Parameter value</A>
+      </ui>
+      <text>using RDotNet;
 
+using RDotNet;
+using RDotNet.Internals.Unix;
+using RDotNet.NativeLibrary;
+using RDotNet.Internals;
+using RDotNet.Devices;
+using RDotNet.Dynamic;
+using RDotNet.Devices;
+using RDotNet.Diagnostics;
+using RDotNet.Utilities;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using ModelFramework;
+using System.ComponentModel;
+
+
+public class Script
+{
+   [Link()] public Simulation MySimulation;
+   public REngine engine = REngine.GetInstance();
+
+   [Input] double day;
+   [Input] double year;
+   public Clock ck;
+
+   // Customizable settings for run (1 and 0)
+   double free = 1;
+   double miyoshi = 1;
+   double p = 0.05;
+   double Rcov = 0; // 0 == R is diagonal matrix, independent observation errors
+
+   // The following event handler will be called once at the beginning of the simulation
+   [EventHandler] public void OnInitialised(){
+
+      engine = Initialize(engine,  MySimulation, miyoshi, p, Rcov);
+
+   }
+
+   [EventHandler] public void OnPost(){
+
+      // initialize some variables
+      engine.Evaluate("specL &lt;- NULL");
+
+      // loop through paddocks to collect info from forecast
+      foreach (Paddock paddock in MySimulation.ChildPaddocks) {
+
+         object soil = paddock.LinkByType("SoilWat");
+         object soiln = paddock.LinkByType("SoilN");
+
+         ModelFramework.Component crop = paddock.Crops[0];
+
+         // RTM function
+         engine = RTM_runner(engine, crop, ((SoilWat) soil), 20);
+
+         // gathering information on this day's forecast
+         engine = date_info(engine, day, year, MySimulation.Variable("Title").ToString());
+
+         // reading forecast from model outputs for the day
+         engine = get_model_results(engine, crop, ((SoilWat) soil), ((SoilN) soiln));
+
+      } // end collection for each paddock
+
+      // data assimilation step (if this is not a free run)
+      if (free == 0){
+
+          // step 1: do we have data for this step?
+          NumericMatrix SDA = engine.Evaluate("as.matrix(ifelse(today %in% names(obs.list), 1, 0))").AsNumericMatrix();
+
+	  // if we have data, let's assimilate!
+      	  if (SDA[0,0] == 1){
+
+	    // step 2: prepare the observed data object
+            engine.Evaluate("Observed &lt;- get_Observed(today, obs.list, dateinfo)");
+	    string[] statVars = engine.Evaluate("Observed$Forecast.name").AsCharacter().ToArray();
+            string[] set_modules = engine.Evaluate("Observed$Module").AsCharacter().ToArray();
+            string[] set_names = engine.Evaluate("Observed$Apsim.Set.Name").AsCharacter().ToArray();
+
+	    // prepare the forecasted data objects
+      	    engine.Evaluate("Forecast$X &lt;- get_Forecast(data.all," + day + ")");
+      	    engine.Evaluate("Maintained &lt;- Forecast$X");
+
+	    // step 3: data assimilation
+            // `H` is the third Argument of the DA function which provides a mapping between forecasts and observed
+
+            GenericVector DAResult = engine.Evaluate(@"
+                                        vals &lt;- data_assimilation(Forecast, Observed, R, theta, miyoshi, p, Rcov)
+                                        DAR &lt;- vals$DAR
+                                        DAR$Time &lt;- Time
+                                        DAR$Spectra &lt;- specL
+                                        R &lt;- vals$R
+                                       	theta &lt;- vals$theta
+                                       	adjusted &lt;- nextStep(vals$Xa, Maintained)
+                                        DAR$adjusted&lt;-adjusted
+                                        SDA.out &lt;- c(SDA.out, list(DAR))
+                                       	adjusted
+				     ").AsList();
+
+	    // step 4: send assimilation ensemble adjustment back to APSIM
+            if(DAResult != null){
+            	 write_back(engine, MySimulation, statVars, set_modules, set_names, DAResult);
+            }
+
+       	  } else{ // if we don't have observations
+
+	 	 engine.Evaluate("DAR &lt;- list()");
+      		 engine.Evaluate("DAR$Time &lt;- Time");
+      		 engine.Evaluate("DAR$Spectra &lt;- specL");
+      		 engine.Evaluate("SDA.out &lt;- c(SDA.out, list(DAR))");
+
+	   }
+
+      } else{ // if this is a free run
+
+         engine.Evaluate("DAR &lt;- list()");
+         engine.Evaluate("DAR$Time &lt;- Time");
+         engine.Evaluate("DAR$Spectra &lt;- specL");
+         engine.Evaluate("SDA.out &lt;- c(SDA.out, list(DAR))");
+
+      }
+
+
+      // save CSV file if simulation is over
+      if(ck.is_end_simulation){
+
+         engine.Evaluate("write.csv(data.all, file = 'dailyOutput_"+MySimulation.Variable("Title").ToString()+".csv', row.names = FALSE)");
+         engine.Evaluate("save(SDA.out, file = 'sda.out.Rdata')");
+         Console.WriteLine("-------------------");
+         engine.Dispose();
+
+         //Console.WriteLine("ck.is_end_simulation: Type is {0}", ck.is_end_simulation.GetType());
+
+      }
+
+   } // End onPost()
+
+   // Function to initialize some variables for simulation and storage
+   public REngine Initialize(REngine engine, Simulation MySimulation,double miyoshi,double p,double Rcov){
+
+      engine.Evaluate("miyoshi &lt;- " + miyoshi);
+      engine.Evaluate("p &lt;- " + p);
+      engine.Evaluate("Rcov &lt;- " + Rcov);
+
+      ck = (Clock) MySimulation.LinkByName("clock");
+      engine.Initialize(); // required since v1.5
+      engine.Evaluate("library(hsdar)");
+      engine.Evaluate("library(dplyr)");
+      engine.Evaluate("source('EnKF.R')");
+
+      // defining variables for storage
+      engine.Evaluate("data.all &lt;- NULL;SDA.out &lt;- list();Forecast &lt;- list(Q=NULL);Observed &lt;- list();Time &lt;- list()");
+      engine.Evaluate("X &lt;- NULL;DAR &lt;- NULL;dd &lt;- NULL;R &lt;- NULL;theta &lt;- NULL");
+
+      // get data for the run if this isn't a free run
+      if (free == 0){
+	  engine.Evaluate("load('obs.list.Rdata')");
+      }
+
+      return engine;
+   }
+
+
+   // function to write adjusted values back into the model for the next forecast
+   public void write_back(REngine engine, Simulation MySimulation, string[] statVars, string[] set_modules, string[] set_names,GenericVector DAResult){
+
+      // loop over stat variables that are going to be assimilated
+      for (int i = 0; i &lt; statVars.Length; i++) {
+
+         // read the result for the first state variables
+         var tmp_res = DAResult[statVars[i]].AsDataFrame();
+         engine.SetSymbol("tmp_res", tmp_res);
+
+         // now loop over ensembles and write the adjusted variables back to the model
+         for (int j = 0; j &lt; MySimulation.ChildPaddocks.Count; j++) {
+
+            // subset a row for each ensemble
+            double[] row = engine.Evaluate("as.numeric(unlist(tmp_res[" + (j + 1) + ",])) ").AsNumeric().ToArray();
+
+            Paddock paddock_set = MySimulation.ChildPaddocks[j];
+
+            // set values based on their module
+            if (set_modules[i] == "SoilN"){
+               object soil_set1 = paddock_set.LinkByType("SoilN");
+               ((SoilN) soil_set1).Set(set_names[i], row);
+
+            }else if (set_modules[i] == "SoilWat"){
+               object soil_set2 = paddock_set.LinkByType("SoilWat");
+               ((SoilWat) soil_set2).Set(set_names[i], row);
+
+            }
+         }
+      }
+   }
+
+   // function to collet model forecast results for the current time step
+   public REngine get_model_results(REngine engine, ModelFramework.Component crop, SoilWat soilwc, SoilN soiln){
+
+      // ------- Crop variables
+      string[] out_vars = {"biomass","lai","yield","WaterSD", "swdef_photo", "transpiration", "swdef_pheno","swdef_expan","sw_supply_sum","sw_demand"};
+      foreach(string out_var in out_vars){
+         double tmp_out = 0;
+         crop.Get(out_var, out tmp_out);
+         engine.Evaluate("dd$" + out_var + "&lt;-" + Math.Round(tmp_out, 2));
+      }
+
+      // ------- Soil state variables
+      // Loop through all the layers and collect info on all variables
+
+      for (int i = 0; i &lt; soilwc.dlayer.Length; i++) {
+
+         // ------- soil temp
+         engine.Evaluate("dd$st"+(i+1)+" &lt;- " + Math.Round(soiln.st[i], 2));
+
+         // ------- soil water
+         engine.Evaluate("dd$sw"+(i+1)+" &lt;- " + Math.Round(soilwc.sw[i], 2));
+
+         // ------- soil no3
+         //engine.Evaluate("dd$no3_"+(i+1)+" &lt;- " + Math.Round(soiln.no3[i], 2));
+
+         // ------- soil nh4
+         //engine.Evaluate("dd$nh4_"+(i+1)+" &lt;- " + Math.Round(soiln.nh4[i], 2));
+
+         // ------- total soil N
+         //engine.Evaluate("dd$ntot_"+(i+1)+" &lt;- " + Math.Round(soiln.nit_tot[i], 2));
+
+         // ------- N mineralization rates
+         //engine.Evaluate("dd$nmin_"+(i+1)+" &lt;- " + Math.Round(soiln.dlt_n_min_tot[i], 2));
+
+         // ------- soil saturated conductivity
+         engine.Evaluate("dd$ks" + (i + 1) + " &lt;- " + Math.Round(soilwc.ks[i], 2));
+
+         // ------- soil bulk density
+         engine.Evaluate("dd$bd" + (i + 1) + " &lt;- " + Math.Round(soilwc.bd[i], 2));
+
+         // ------- soil saturated water flow conductivity
+         engine.Evaluate("dd$swcon" + (i + 1) + " &lt;- " + Math.Round(soilwc.swcon[i], 2));
+      }
+
+      engine.Evaluate("dd$drain &lt;- " + soilwc.drain);
+
+      // adding info to simulation storage variables
+      engine.Evaluate("dd &lt;- as.data.frame(dd)");
+      engine.Evaluate("data.all &lt;- rbind(data.all, dd)");
+
+      return engine;
+   }
+
+   // Function that couples APSIM with RTM model
+   public REngine RTM_runner(REngine engine, ModelFramework.Component crop, SoilWat soilwc, int n){
+
+      // initialize storage variables
+      double lai_tmp;
+      double biomass;
+      double yieldc;
+      double LeafGreenNConc = 0;
+      double drain = 0;
+      double LeafGreenWt = 0;
+      double GPLA = 0;
+      double biomass_wt = 0;
+
+      // extract variables for RTM model
+      crop.Get("lai", out lai_tmp);
+      crop.Get("yield", out yieldc);
+      crop.Get("biomass", out biomass);
+      crop.Get("LeafGreenNConc", out LeafGreenNConc);
+      crop.Get("LeafGreenWt", out LeafGreenWt);
+      crop.Get("TPLA", out GPLA);
+      crop.Get("biomass_wt", out biomass_wt);
+
+      // estimating values for RTM model
+      engine.Evaluate("sla &lt;-" + lai_tmp * 10 / (LeafGreenWt));
+
+      // PROSAIL function will break if sla is Inf (aka if LeafGreenWt is 0)
+      if (LeafGreenWt &gt; 0){
+         engine.Evaluate("lai_tmp &lt;-" + lai_tmp);
+         engine.Evaluate("psoil &lt;-" + soilwc.sw[1] / soilwc.sat[1]);
+
+         // https://www.sciencedirect.com/science/article/pii/S0303243413000469
+         engine.Evaluate("cab &lt;-" + ((LeafGreenNConc * LeafGreenWt) - 0.2057) / 10);
+         engine.Evaluate("car &lt;- cab/4.11");
+         engine.Evaluate(@"n &lt;- " + n +@"
+            parameter &lt;- data.frame(N =(0.025 + (0.9*sla))/(sla-0.1),
+            LAI = " + lai_tmp + @",
+            Cab=cab,
+            Car=car,
+            Cw=runif(n,0.01,0.03),
+            Cm=(1/sla/1000),
+            Cbrown=runif(n,0.01,0.99),
+            hspot=runif(n,0.01,.2),
+            psoil=psoil
+            )");
+
+         engine.Evaluate("spectra &lt;- hsdar::PROSAIL(parameterList = parameter)");
+         engine.Evaluate("temp &lt;- data.frame(vegindex(spectra, index=c('NDVI','OSAVI','EVI','Green NDVI', 'MSAVI','NDVI3')))");
+         engine.Evaluate(@"dd &lt;- apply(temp, 2, mean)");
+      } else{
+
+         // here we have to add empty values so the row is the correct length
+         engine.Evaluate("spectra &lt;- NULL");
+         engine.Evaluate(@"dd &lt;- list(NDVI = 0, OSAVI = 0, EVI = 0, `Green NDVI`= 0, MSAVI = 0, NDVI3 = 0)");
+      }
+
+      engine.Evaluate("specL &lt;- c(specL, spectra) ");
+      return engine;
+   }
+
+   // Function to get information for this time step
+   public REngine date_info(REngine engine, double day, double year, string name){
+
+      NumericVector dateinfo = engine.CreateNumericVector(new double[] {day, year});
+      engine.SetSymbol("dateinfo", dateinfo);
+      engine.Evaluate("dd$day &lt;-" + day);
+      engine.Evaluate("dd$year &lt;-" + year);
+      engine.Evaluate("dd$sim &lt;- getwd()");
+      engine.Evaluate("dd$ensemble &lt;- '" +name + "'");
+
+      engine.Evaluate("Time$Day &lt;- " + day);
+      engine.Evaluate("Time$Year &lt;-" + year);
+      engine.Evaluate("today &lt;- paste0(" + day + ",'-'," + year + ")");
+
+      return engine;
+   }
+
+}
+
+</text>
+      <Reference>
+        <ref type="text" description="Path to assembly:">RDotNet.dll</ref>
+      </Reference>
+      <Reference name="Reference1">
+        <ref type="text" description="Path to assembly:">RDotNet.NativeLibrary.dll</ref>
+      </Reference>
+      <Reference name="Reference2">
+        <ref type="text" description="Path to assembly:">DynamicInterop.dll</ref>
+      </Reference>
+    </manager2>
+		<area name="paddock">
 			<soil name="Soil">
 				<Comment type="multiedit" description="Comments">ICASA Classification: $simulation.soil.classification</Comment>
 				<ASC_Order description="Australian Soil Classification Order" />
@@ -154,9 +492,20 @@
 				<standing_fraction type="text" description="Fraction of residue standing">$simulation.initialCondition.standing_fraction</standing_fraction>
 			</surfaceom>
 			<fertiliser />
+      <irrigation name="Irrigation">
+        <automatic_irrigation type="list" listvalues="on,off" description="Automatic irrigation">$simulation.irrigation.automatic_irrigation</automatic_irrigation>
+        <asw_depth type="text" description="Depth to which ASW is calculated. (mm)">$simulation.irrigation.asw_depth</asw_depth>
+        <crit_fr_asw type="text" description="Fraction of ASW below which irrigation is applied (0-1.0)">$simulation.irrigation.crit_fr_asw</crit_fr_asw>
+        <irrigation_efficiency type="text" description="Efficiency of the irrigation. (0-1.0)">$simulation.irrigation.efficiency</irrigation_efficiency>
+        <irrigation_allocation type="list" listvalues="on,off" description="Allocation limits">$simulation.irrigation.allocation_limits</irrigation_allocation>
+        <allocation type="text" description="Allocation in mm">$simulation.irrigation.allocation</allocation>
+        <default_no3_conc type="text" description="Nitrate concentration (ppm N)">$simulation.irrigation.default_no3_conc</default_no3_conc>
+        <default_nh4_conc type="text" description="Ammonium concentration (ppm N)">$simulation.irrigation.default_nh4_conc</default_nh4_conc>
+        <default_cl_conc type="text" description="Chloride concentration (ppm Cl)">$simulation.irrigation.default_cl_conc</default_cl_conc>
+      </irrigation>
       <$simulation.cropName>
             <ini>
-               <filename>${simulation.cropName}.xml</filename>
+               <filename>${simulation.cropName_f}.xml</filename>
             </ini>
       </$simulation.cropName>
 			<folder name="Manager folder">
@@ -224,6 +573,32 @@
             <event>start_of_day</event>
           </script>
         </manager>
+#if( $simulation.fertilizer.automatic_fertilizer == "on" )
+        <manager name="Fertilise for potential yield">
+          <ui>
+            <category type="category" description="When should fertiliser be applied" />
+            <modulename type="modulename" description="In which crop is fertiliser being applied : ">$simulation.cropName</modulename>
+            <fert_criteria type="text" description="Maximum Amount of NO3 required in top 3 layers (kg/ha) : ">$simulation.fertilizer.fert_criteria</fert_criteria>
+            <fert_critical type="text" description="Critical Amount of NO3 in top 3 layers (kg/ha) : ">$simulation.fertilizer.fert_critical</fert_critical>
+            <category type="category" description="Fertiliser application details" />
+            <fertmodule type="modulename" description="Module used to apply the fertiliser : ">fertiliser</fertmodule>
+            <fert_depth type="text" description="fert_depth">$simulation.fertilizer.depth</fert_depth>
+            <fert_type type="list" listvalues="NO3_N, NH4_N, NH4NO3, urea_N, urea_no3, urea, nh4so4_n, rock_p, banded_p, broadcast_p" description="Fertiliser type : ">$simulation.fertilizer.type_auto</fert_type>
+          </ui>
+          <script>
+            <text>
+         if ([modulename].plant_status = 'alive') then
+            NO3_available = no3(1) + no3(2) + no3(3)
+            if (NO3_available &lt;= [fert_critical]) then
+               N_deficit = [fert_criteria] - NO3_available
+               '[fertmodule]' apply amount = N_deficit (kg/ha), depth = [fert_depth] (mm), type = [fert_type] ()
+            endif
+         endif
+  </text>
+            <event>start_of_day</event>
+          </script>
+        </manager>
+#else
         <manager name="Fertilise N at sowing">
           <ui>
             <category type="category" description="When should fertiliser be applied" />
@@ -242,6 +617,26 @@
             <event>[modulename].[eventname]</event>
           </script>
         </manager>
+        <manager name="Fertilise on DAS">
+          <ui>
+            <category type="category" description="When should fertiliser be applied" />
+            <modulename type="modulename" description="On which crop is fertiliser being applied : ">$simulation.cropName</modulename>
+            <fert_das type="text" description="Enter fertiliser days after sowing  : ">$simulation.fertilizer.days_after_sowing</fert_das>
+            <fert_criteria type="text" description="Amount of N required in top 3 layers (kg/ha) : ">$simulation.fertilizer.subsequent_amount</fert_criteria>
+            <category type="category" description="Fertiliser application details" />
+            <fertmodule type="modulename" description="Module used to apply the fertiliser : ">fertiliser</fertmodule>
+            <fert_depth type="text" description="fert_depth">$simulation.fertilizer.depth</fert_depth>
+            <fert_type type="list" listvalues="NO3_N, NH4_N, NH4NO3, urea_N, urea_no3, urea, nh4so4_n, rock_p, banded_p, broadcast_p" description="Fertiliser type : ">$simulation.fertilizer.type</fert_type>
+          </ui>
+          <script>
+            <text>
+         if ([modulename].DaysAfterSowing = [fert_das]) then
+            '[fertmodule]' apply amount = [fert_criteria] (kg/ha), depth = [fert_depth] (mm), type = [fert_type] ()
+         endif </text>
+            <event>start_of_day</event>
+          </script>
+        </manager>
+#end
         <manager name="Harvesting rule">
           <ui>
             <category type="category" description="Harvesting criteria" />
@@ -274,38 +669,6 @@ endif
           </script>
         </manager>
 			</folder>
-      <manager name="derived variables">
-        <script>
-          <text>AET = es + ep
-T_average = (maxt + mint) * 0.5
-soil_co2 = dlt_biom_c_atm() + dlt_fom_c_atm() + dlt_hum_c_atm() + dlt_res_c_atm
-</text>
-          <event>start_of_day</event>
-        </script>
-        <script>
-          <text>
-          </text>
-          <event>end_of_day</event>
-        </script>
-      </manager>
-      <tracker>
-        <variable>sum of irrigation on end_of_day from sowing to harvesting as IrrigationIn</variable>
-        <variable>sum of ep on end_of_day from sowing to harvesting as WaterUse</variable>
-        <variable>sum of AET on end_of_day from sowing to harvesting as actual_ET</variable>
-        <variable>sum of fertiliser on end_of_day from sowing to harvesting as FertiliserIn</variable>
-        <variable>sum of leach_no3 on end_of_day from sowing to harvesting as NO3_leaching</variable>
-        <variable>sum of radn on end_of_day from sowing to harvesting as RadiationIn</variable>
-        <variable>sum of n2o_atm() on end_of_day from sowing to harvesting as N2OemissionIn</variable>
-        <variable>sum of n2o_atm() on end_of_day from reported to now as N2Oemission_year</variable>
-        <variable>sum of soil_co2 on end_of_day from sowing to harvesting as CO2emissionIn</variable>
-        <variable>sum of soil_co2 on end_of_day from reported to now as CO2emission_year</variable>
-        <variable>average of T_average on end_of_day from sowing to harvesting as TempIn</variable>
-        <variable>average of T_average on end_of_day from reported to now as Temp_year</variable>
-        <variable>sum of rain on end_of_day from sowing to harvesting as RainIn</variable>
-        <variable>sum of rain on end_of_day from reported to now as Rain_year</variable>
-        <variable>sum of radn on end_of_day from reported to now as Radiation_year</variable>
-        <variable>average of nfact_photo on end_of_day from sowing to harvesting as N_stress_photo</variable>
-      </tracker>
 			<outputfile>
 				<filename output="yes">Generic.out</filename>
 				<title>AgMIP</title>
@@ -317,23 +680,9 @@ soil_co2 = dlt_biom_c_atm() + dlt_fom_c_atm() + dlt_hum_c_atm() + dlt_res_c_atm
 				<events name="Reporting Frequency">
 					<event>$simulation.reporting_frequency</event>
 				</events>
-				<Graph name="Yield and Biomass">
-					<Legend>
-						<CheckedTitles> biomass</CheckedTitles>
-						<CheckedTitles> yield</CheckedTitles>
-					</Legend>
-					<Plot>
-						<SeriesType>Solid line</SeriesType>
-						<PointType>Circle</PointType>
-						<colour/>
-						<X>Date</X><Y>biomass</Y><Y>yield</Y>
-						<YRight>lai</YRight>
-						<GDApsimFileReader name="ApsimFileReader" />
-					</Plot>
-				</Graph>
+
 			</outputfile>
 		</area>
-	
 	</simulation>
-#end
+  #end
 </folder>
