@@ -232,7 +232,10 @@ public class Script
          engine.Evaluate("dd$sw"+(i+1)+" &lt;- " + Math.Round(soilwc.sw[i], 2));
 
          // ------- soil no3
-         //engine.Evaluate("dd$no3_"+(i+1)+" &lt;- " + Math.Round(soiln.no3[i], 2));
+         engine.Evaluate("dd$no3_"+(i+1)+" &lt;- " + Math.Round(soiln.no3[i], 2));
+
+				 // ------- soil no3
+         engine.Evaluate("dd$oc_"+(i+1)+" &lt;- " + Math.Round(soiln.oc[i], 2));
 
          // ------- soil nh4
          //engine.Evaluate("dd$nh4_"+(i+1)+" &lt;- " + Math.Round(soiln.nh4[i], 2));
@@ -247,10 +250,10 @@ public class Script
          engine.Evaluate("dd$ks" + (i + 1) + " &lt;- " + Math.Round(soilwc.ks[i], 2));
 
          // ------- soil bulk density
-         engine.Evaluate("dd$bd" + (i + 1) + " &lt;- " + Math.Round(soilwc.bd[i], 2));
+      //   engine.Evaluate("dd$bd" + (i + 1) + " &lt;- " + Math.Round(soilwc.bd[i], 2));
 
          // ------- soil saturated water flow conductivity
-         engine.Evaluate("dd$swcon" + (i + 1) + " &lt;- " + Math.Round(soilwc.swcon[i], 2));
+        // engine.Evaluate("dd$swcon" + (i + 1) + " &lt;- " + Math.Round(soilwc.swcon[i], 2));
       }
 
       engine.Evaluate("dd$drain &lt;- " + soilwc.drain);
