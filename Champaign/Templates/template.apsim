@@ -145,7 +145,7 @@ public class Script
       if(ck.is_end_simulation){
 
          engine.Evaluate("write.csv(data.all, file = 'dailyOutput_"+MySimulation.Variable("Title").ToString()+".csv', row.names = FALSE)");
-         engine.Evaluate("save(SDA.out, file = 'sda.out.Rdata')");
+         #engine.Evaluate("save(SDA.out, file = 'sda.out.Rdata')");
          Console.WriteLine("-------------------");
          engine.Dispose();
 
