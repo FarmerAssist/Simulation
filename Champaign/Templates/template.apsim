@@ -505,7 +505,7 @@ public class Script
       </irrigation>
       <$simulation.cropName>
             <ini>
-               <filename>${simulation.cropName_f}.xml</filename>
+               <filename>${simulation.crop_name}.xml</filename>
             </ini>
       </$simulation.cropName>
 			<folder name="Manager folder">
