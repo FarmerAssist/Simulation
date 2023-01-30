@@ -188,7 +188,7 @@ public class Script
          //engine.Evaluate("dd$nmin_"+(i+1)+" &lt;- " + Math.Round(soiln.dlt_n_min_tot[i], 2));
 
          // ------- soil saturated conductivity
-         engine.Evaluate("dd$ks" + (i + 1) + " &lt;- " + Math.Round(soilwc.ks[i], 2));
+        // engine.Evaluate("dd$ks" + (i + 1) + " &lt;- " + Math.Round(soilwc.ks[i], 2));
 
          // ------- soil bulk density
       //   engine.Evaluate("dd$bd" + (i + 1) + " &lt;- " + Math.Round(soilwc.bd[i], 2));
