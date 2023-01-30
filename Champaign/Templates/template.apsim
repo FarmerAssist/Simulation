@@ -82,71 +82,12 @@ public class Script
 
       } // end collection for each paddock
 
-      // data assimilation step (if this is not a free run)
-      if (free == 0){
-
-          // step 1: do we have data for this step?
-          NumericMatrix SDA = engine.Evaluate("as.matrix(ifelse(today %in% names(obs.list), 1, 0))").AsNumericMatrix();
-
-	  // if we have data, let's assimilate!
-      	  if (SDA[0,0] == 1){
-
-	    // step 2: prepare the observed data object
-            engine.Evaluate("Observed &lt;- get_Observed(today, obs.list, dateinfo)");
-	    string[] statVars = engine.Evaluate("Observed$Forecast.name").AsCharacter().ToArray();
-            string[] set_modules = engine.Evaluate("Observed$Module").AsCharacter().ToArray();
-            string[] set_names = engine.Evaluate("Observed$Apsim.Set.Name").AsCharacter().ToArray();
-
-	    // prepare the forecasted data objects
-      	    engine.Evaluate("Forecast$X &lt;- get_Forecast(data.all," + day + ")");
-      	    engine.Evaluate("Maintained &lt;- Forecast$X");
-
-	    // step 3: data assimilation
-            // `H` is the third Argument of the DA function which provides a mapping between forecasts and observed
-
-            GenericVector DAResult = engine.Evaluate(@"
-                                        vals &lt;- data_assimilation(Forecast, Observed, R, theta, miyoshi, p, Rcov)
-                                        DAR &lt;- vals$DAR
-                                        DAR$Time &lt;- Time
-                                        DAR$Spectra &lt;- specL
-                                        R &lt;- vals$R
-                                       	theta &lt;- vals$theta
-                                       	adjusted &lt;- nextStep(vals$Xa, Maintained)
-                                        DAR$adjusted&lt;-adjusted
-                                        SDA.out &lt;- c(SDA.out, list(DAR))
-                                       	adjusted
-				     ").AsList();
-
-	    // step 4: send assimilation ensemble adjustment back to APSIM
-            if(DAResult != null){
-            	 write_back(engine, MySimulation, statVars, set_modules, set_names, DAResult);
-            }
-
-       	  } else{ // if we don't have observations
-
-	 	 engine.Evaluate("DAR &lt;- list()");
-      		 engine.Evaluate("DAR$Time &lt;- Time");
-      		 engine.Evaluate("DAR$Spectra &lt;- specL");
-      		 engine.Evaluate("SDA.out &lt;- c(SDA.out, list(DAR))");
-
-	   }
-
-      } else{ // if this is a free run
-
-         engine.Evaluate("DAR &lt;- list()");
-         engine.Evaluate("DAR$Time &lt;- Time");
-         engine.Evaluate("DAR$Spectra &lt;- specL");
-         engine.Evaluate("SDA.out &lt;- c(SDA.out, list(DAR))");
-
-      }
-
 
       // save CSV file if simulation is over
       if(ck.is_end_simulation){
 
          engine.Evaluate("write.csv(data.all, file = 'dailyOutput_"+MySimulation.Variable("Title").ToString()+".csv', row.names = FALSE)");
-         #engine.Evaluate("save(SDA.out, file = 'sda.out.Rdata')");
-         Console.WriteLine("-------------------");
+
          engine.Dispose();
 
          //Console.WriteLine("ck.is_end_simulation: Type is {0}", ck.is_end_simulation.GetType());
