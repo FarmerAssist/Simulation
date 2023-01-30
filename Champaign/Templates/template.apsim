@@ -166,16 +166,12 @@ public class Script
       engine.Initialize(); // required since v1.5
       engine.Evaluate("library(hsdar)");
       engine.Evaluate("library(dplyr)");
-      engine.Evaluate("source('EnKF.R')");
 
       // defining variables for storage
       engine.Evaluate("data.all &lt;- NULL;SDA.out &lt;- list();Forecast &lt;- list(Q=NULL);Observed &lt;- list();Time &lt;- list()");
       engine.Evaluate("X &lt;- NULL;DAR &lt;- NULL;dd &lt;- NULL;R &lt;- NULL;theta &lt;- NULL");
 
-      // get data for the run if this isn't a free run
-      if (free == 0){
-	  engine.Evaluate("load('obs.list.Rdata')");
-      }
+
 
       return engine;
    }
