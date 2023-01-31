@@ -7,9 +7,9 @@ executable:  /Apsim79/Model/Apsim.exe
 outtypes:    .met,.apsim,.out,.json,.txt
 exname_o :    test
 
-ref_year:    2015
-num_years:   4
-scen_years:  4
+ref_year:    2005
+num_years:   14
+scen_years:  14
 scens: 5
 
 delta:       "60,60" #"30,30"

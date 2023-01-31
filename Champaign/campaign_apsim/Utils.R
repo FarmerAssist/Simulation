@@ -193,4 +193,3 @@ write_apsim_met <- function(met, wrt.dir = NULL, filename = NULL){
 }
 
 
-list.files(".",".met")
