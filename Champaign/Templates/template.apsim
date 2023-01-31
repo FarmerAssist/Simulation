@@ -154,7 +154,7 @@ public class Script
    public REngine get_model_results(REngine engine, ModelFramework.Component crop, SoilWat soilwc, SoilN soiln){
 
       // ------- Crop variables
-      string[] out_vars = {"biomass","lai","yield","WaterSD", "swdef_photo", "transpiration", "swdef_pheno","swdef_expan","sw_supply_sum","sw_demand"};
+      string[] out_vars = {"biomass","lai","yield", "swdef_photo""};
       foreach(string out_var in out_vars){
          double tmp_out = 0;
          crop.Get(out_var, out tmp_out);
@@ -609,19 +609,6 @@ endif
           </script>
         </manager>
 			</folder>
-			<outputfile>
-				<filename output="yes">Generic.out</filename>
-				<title>AgMIP</title>
-				<variables name="Variables">
-#foreach ($var in $simulation.output_variables)
-					<variable>$var.name</variable>
-#end
-				</variables>
-				<events name="Reporting Frequency">
-					<event>$simulation.reporting_frequency</event>
-				</events>
-
-			</outputfile>
 		</area>
 	</simulation>
   #end
