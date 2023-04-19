@@ -155,15 +155,6 @@ public class Script
 
       // ------- Crop variables
       string[] out_vars = {"biomass","lai","yield", "swdef_photo"};
-			List<string> out_vars_list = new List<string>(out_vars);
-
-			if (crop.Name == "Maize")      {
-				 out_vars_list.Add("DailyDeltaTT");
-			}
-			else      {
-				 out_vars_list.Add("TT");
-			}
-			out_vars = out_vars_list.ToArray();
       foreach(string out_var in out_vars){
          double tmp_out = 0;
          crop.Get(out_var, out tmp_out);
@@ -207,7 +198,6 @@ public class Script
       }
 
       engine.Evaluate("dd$drain &lt;- " + soilwc.drain);
-			engine.Evaluate("dd$eo &lt;- " + soilwc.eo);
 
       // adding info to simulation storage variables
       engine.Evaluate("dd &lt;- as.data.frame(dd)");
