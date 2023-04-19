@@ -154,7 +154,7 @@ public class Script
    public REngine get_model_results(REngine engine, ModelFramework.Component crop, SoilWat soilwc, SoilN soiln){
 
       // ------- Crop variables
-      string[] out_vars = {"biomass","lai","yield", "swdef_photo"};
+      string[] out_vars = {"biomass","lai","yield", "swdef_photo","TT"};
       foreach(string out_var in out_vars){
          double tmp_out = 0;
          crop.Get(out_var, out tmp_out);
@@ -198,6 +198,7 @@ public class Script
       }
 
       engine.Evaluate("dd$drain &lt;- " + soilwc.drain);
+			engine.Evaluate("dd$drain &lt;- " + soilwc.eo);
 
       // adding info to simulation storage variables
       engine.Evaluate("dd &lt;- as.data.frame(dd)");
