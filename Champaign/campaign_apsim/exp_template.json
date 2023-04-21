@@ -103,16 +103,5 @@
         "water": "no",
         "nitrogen": "no",
         "surfaceOM": "no"
-      },
-
-    "cultivarParams":{
-  	"leaf_app_rate1" : "57",
-  	"leaf_app_rate2" : "32",
-  	"leaf_app_rate3" : "36",
-  	"largestLeafParams1": "-1.17",
-  	"largestLeafParams2" :"0.047",
-  	"y_lai_sla_max1": "50000",
-  	"y_lai_sla_max2": "25000",
-  	"leaf_init_rate": "27"
-    }
+      }
 }
