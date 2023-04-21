@@ -1,5 +1,5 @@
 {
-      "crop_name": "Maize",
+      "crop_name": ["Maize"],
       "start_date": "01/01/1980",
       "end_date": "31/12/2010",
       "log": "",
