@@ -68,10 +68,10 @@
     <leaf_no_seed description="number of leaf primordia present in seed">6.0     </leaf_no_seed>
     <leaf_no_min description="minimum leaf number">5.0</leaf_no_min>
     <leaf_no_max description="maximum leaf number">40.0</leaf_no_max>
-    <leaf_init_rate units="oCd" description="degree days to initiate each leaf primordium until floral init (deg day)">$cultivarParams.leaf_init_rate</leaf_init_rate>
-    <leaf_app_rate1 type="text" description="leaf_app_rate1">$cultivarParams.leaf_app_rate1</leaf_app_rate1>
-    <leaf_app_rate2 type="text" description="leaf_app_rate2">$cultivarParams.leaf_app_rate2</leaf_app_rate2>
-    <leaf_app_rate3 type="text" description="leaf_app_rate3">$cultivarParams.leaf_app_rate3</leaf_app_rate3>
+    <leaf_init_rate units="oCd" description="degree days to initiate each leaf primordium until floral init (deg day)">20.2</leaf_init_rate>
+    <leaf_app_rate1 type="text" description="leaf_app_rate1">45.0</leaf_app_rate1>
+    <leaf_app_rate2 type="text" description="leaf_app_rate2">32.0</leaf_app_rate2>
+    <leaf_app_rate3 type="text" description="leaf_app_rate3">32.0</leaf_app_rate3>
     <leaf_no_rate_change1 type="text" description="leaf_no_rate_change1">8</leaf_no_rate_change1>
     <leaf_no_rate_change2 type="text" description="leaf_no_rate_change2">3</leaf_no_rate_change2>
     <!--  RELATIVE to FLAG
@@ -140,7 +140,7 @@
       (Zea mays) C.J. Birch, G.L. Hammer and K.G. Ricket. Aust. J Agric. Res., 1998, 49, 249-62
       -->
     <aX0 type="text" description="Largest leaf position multiplier">0.67</aX0>
-    <largestLeafParams type="text" description="Largest Leaf Area Params">1000  $cultivarParams.largestLeafParams1 $cultivarParams.largestLeafParams2 </largestLeafParams>
+    <largestLeafParams type="text" description="Largest Leaf Area Params">1000  -1.17 0.047 </largestLeafParams>
 	<!-- params for the size of the largest leaf aMaxA, aMaxB, aMaxC
 	where aMaxA, aMaxB, aMaxC are Eqn 13 parameters and aX0 is Eqn 14 parameter
 	-->
@@ -152,7 +152,7 @@
       SPECIFIC LEAF AREA - SLA
       -->
     <x_lai>0.1    4</x_lai>
-    <y_lai_sla_max description="maximum specific leaf area for delta LAI">50000 $cultivarParams.y_lai_sla_max2</y_lai_sla_max>
+    <y_lai_sla_max description="maximum specific leaf area for delta LAI">50000 25000</y_lai_sla_max>
     <lai_sla_min description="minimum specific leaf area for delta LAI">8000  8000</lai_sla_min>
     <!-- ______________________________________________________________________
       TPLA  - USED TO INTIALISE THE INITIAL LAI
@@ -330,7 +330,7 @@
       -->
     <!-- ______________________________________________________________________
       SOIL WATER
-     
+
       -->
 
     <minsw description="lowest acceptable value for ll">0.00001</minsw>
