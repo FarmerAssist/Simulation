@@ -10,7 +10,7 @@ exname_o :    test
 ref_year:    2005
 num_years:   14
 scen_years:  14
-scens: 15
+scens: 5
 
 delta:       "30,30" #"30,30"
 tdelta:      "120,120"
