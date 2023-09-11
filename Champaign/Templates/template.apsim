@@ -255,17 +255,9 @@ public class Script
             )");
 
          engine.Evaluate("spectra &lt;- hsdar::PROSAIL(parameterList = parameter)");
-         engine.Evaluate(@"wavelengths &lt;- seq(400, 2500, by = 1) # Replace with your actual wavelength vector
-                           sentinel2_bands &lt;- c(490, 560, 665, 842, 1610, 2190)
-
-                           # Find the closest matching wavelengths in your data
-                           closest_indices &lt;- sapply(sentinel2_bands, function(x) which.min(abs(wavelengths - x)))
-
-                           # Extract the Sentinel-2 bands from the spectra matrix
-                           temp &lt;- data.frame(spectra[, closest_indices])
-                        ");
+         engine.Evaluate(@"ss = hsdar::spectralResampling(spectra, 'Sentinel2a')");
          //engine.Evaluate("temp &lt;- data.frame(vegindex(spectra, index=c('NDVI','OSAVI','EVI','Green NDVI', 'MSAVI','NDVI3')))");
-         engine.Evaluate(@"dd &lt;- apply(temp, 2, mean)");
+         engine.Evaluate(@"dd &lt;- apply(cbind(ss@spectra@spectra_ma, as.data.frame(ss@SI@SI_data)), 2, mean)");
       } else{
 
          // here we have to add empty values so the row is the correct length
