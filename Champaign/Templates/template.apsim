@@ -154,7 +154,7 @@ public class Script
    public REngine get_model_results(REngine engine, ModelFramework.Component crop, SoilWat soilwc, SoilN soiln){
 
       // ------- Crop variables
-      string[] out_vars = {"biomass","lai","yield","WaterSD", "swdef_photo", "transpiration", "swdef_pheno","swdef_expan","sw_supply_sum","sw_demand"};
+      string[] out_vars = {"biomass","lai", "WaterSD", "transpiration", "swdef_photo", "swdef_pheno","swdef_expan","sw_supply_sum","sw_demand","n_sd_ratio", "biomass_n","no3_demand", "n_cum_uptake"};
       foreach(string out_var in out_vars){
          double tmp_out = 0;
          crop.Get(out_var, out tmp_out);
@@ -167,7 +167,7 @@ public class Script
       for (int i = 0; i &lt; soilwc.dlayer.Length; i++) {
 
          // ------- soil temp
-         engine.Evaluate("dd$st"+(i+1)+" &lt;- " + Math.Round(soiln.st[i], 2));
+         //engine.Evaluate("dd$st"+(i+1)+" &lt;- " + Math.Round(soiln.st[i], 2));
 
          // ------- soil water
          engine.Evaluate("dd$sw"+(i+1)+" &lt;- " + Math.Round(soilwc.sw[i], 2));
@@ -176,13 +176,13 @@ public class Script
          engine.Evaluate("dd$no3_"+(i+1)+" &lt;- " + Math.Round(soiln.no3[i], 2));
 
 				 // ------- soil no3
-         engine.Evaluate("dd$oc_"+(i+1)+" &lt;- " + Math.Round(soiln.oc[i], 2));
+         //engine.Evaluate("dd$oc_"+(i+1)+" &lt;- " + Math.Round(soiln.oc[i], 2));
 
          // ------- soil nh4
          //engine.Evaluate("dd$nh4_"+(i+1)+" &lt;- " + Math.Round(soiln.nh4[i], 2));
 
          // ------- total soil N
-         //engine.Evaluate("dd$ntot_"+(i+1)+" &lt;- " + Math.Round(soiln.nit_tot[i], 2));
+         engine.Evaluate("dd$ntot_"+(i+1)+" &lt;- " + Math.Round(soiln.nit_tot[i], 2));
 
          // ------- N mineralization rates
          //engine.Evaluate("dd$nmin_"+(i+1)+" &lt;- " + Math.Round(soiln.dlt_n_min_tot[i], 2));
@@ -252,7 +252,16 @@ public class Script
             )");
 
          engine.Evaluate("spectra &lt;- hsdar::PROSAIL(parameterList = parameter)");
-         engine.Evaluate("temp &lt;- data.frame(vegindex(spectra, index=c('NDVI','OSAVI','EVI','Green NDVI', 'MSAVI','NDVI3')))");
+         engine.Evaluate(@"wavelengths &lt;- seq(400, 2500, by = 1) # Replace with your actual wavelength vector
+                           sentinel2_bands &lt;- c(490, 560, 665, 842, 1610, 2190)
+
+                           # Find the closest matching wavelengths in your data
+                           closest_indices &lt;- sapply(sentinel2_bands, function(x) which.min(abs(wavelengths - x)))
+
+                           # Extract the Sentinel-2 bands from the spectra matrix
+                           temp &lt;- data.frame(spectra[, closest_indices])
+                        ");
+         #engine.Evaluate("temp &lt;- data.frame(vegindex(spectra, index=c('NDVI','OSAVI','EVI','Green NDVI', 'MSAVI','NDVI3')))");
          engine.Evaluate(@"dd &lt;- apply(temp, 2, mean)");
       } else{
 
