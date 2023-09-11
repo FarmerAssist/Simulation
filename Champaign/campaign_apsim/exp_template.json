@@ -2,7 +2,7 @@
       "crop_name": "Maize",
       "start_date": "01/01/1980",
       "end_date": "31/12/2010",
-      "log": "",  
+      "log": "",
       "reporting_frequency": "harvesting",
       "output_variables": [
         {"name": "dd/mm/yyyy as Date"},
@@ -55,7 +55,7 @@
       "planting": {
         "pdate": "1-may",
         "edate": "1-nov",
-        "cultivar": "B_105_biochar",
+        "cultivar": "custom",
         "row_spacing": "700",
         "depth": "30",
         "sowing_density": "9",
