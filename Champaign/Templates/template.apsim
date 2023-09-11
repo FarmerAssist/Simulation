@@ -264,7 +264,7 @@ public class Script
                            # Extract the Sentinel-2 bands from the spectra matrix
                            temp &lt;- data.frame(spectra[, closest_indices])
                         ");
-         #engine.Evaluate("temp &lt;- data.frame(vegindex(spectra, index=c('NDVI','OSAVI','EVI','Green NDVI', 'MSAVI','NDVI3')))");
+         //engine.Evaluate("temp &lt;- data.frame(vegindex(spectra, index=c('NDVI','OSAVI','EVI','Green NDVI', 'MSAVI','NDVI3')))");
          engine.Evaluate(@"dd &lt;- apply(temp, 2, mean)");
       } else{
 
