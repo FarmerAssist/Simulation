@@ -155,7 +155,7 @@ public class Script
 
       // ------- Crop variables
 
-      string[] out_vars = {"biomass","lai", "WaterSD", "transpiration", "swdef_photo", "swdef_pheno","swdef_expan","sw_supply_sum","sw_demand","n_sd_ratio", "biomass_n","no3_demand", "n_cum_uptake"};
+      string[] out_vars = {"biomass","lai", "WaterSD", "transpiration","TT","DailyDeltaTT","swdef_photo", "swdef_pheno","swdef_expan","sw_supply_sum","sw_demand","n_sd_ratio", "biomass_n","no3_demand", "n_cum_uptake"};
 
       foreach(string out_var in out_vars){
          double tmp_out = 0;
