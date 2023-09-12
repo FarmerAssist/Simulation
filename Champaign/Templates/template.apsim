@@ -236,35 +236,32 @@ public class Script
 
       // PROSAIL function will break if sla is Inf (aka if LeafGreenWt is 0)
       if (LeafGreenWt &gt; 0){
-         engine.Evaluate("lai_tmp &lt;-" + lai_tmp);
-         engine.Evaluate("psoil &lt;-" + soilwc.sw[1] / soilwc.sat[1]);
-
-         // https://www.sciencedirect.com/science/article/pii/S0303243413000469
-         engine.Evaluate("cab &lt;-" + ((LeafGreenNConc * LeafGreenWt) - 0.2057) / 10);
-         engine.Evaluate("car &lt;- cab/4.11");
-         engine.Evaluate(@"n &lt;- " + n +@"
-            parameter &lt;- data.frame(N =(0.025 + (0.9*sla))/(sla-0.1),
-            LAI = " + lai_tmp + @",
-            Cab=cab,
-            Car=car,
-            Cw=runif(n,0.01,0.03),
-            Cm=(1/sla/1000),
-            Cbrown=runif(n,0.01,0.99),
-            hspot=runif(n,0.01,.2),
-            psoil=psoil
-            )");
-
-         engine.Evaluate("spectra &lt;- hsdar::PROSAIL(parameterList = parameter)");
-         engine.Evaluate(@"ss = hsdar::spectralResampling(spectra, 'Sentinel2a')");
-         //engine.Evaluate("temp &lt;- data.frame(vegindex(spectra, index=c('NDVI','OSAVI','EVI','Green NDVI', 'MSAVI','NDVI3')))");
-         engine.Evaluate(@"dd &lt;- apply(cbind(ss@spectra@spectra_ma, as.data.frame(ss@SI@SI_data)), 2, mean)");
+        lai_tmp = lai_tmp;
       } else{
-
-         // here we have to add empty values so the row is the correct length
-         engine.Evaluate("spectra &lt;- NULL");
-         engine.Evaluate(@"dd &lt;- list(NDVI = 0, OSAVI = 0, EVI = 0, `Green NDVI`= 0, MSAVI = 0, NDVI3 = 0)");
+        lai_tmp = 0.001;
       }
+    engine.Evaluate("lai_tmp &lt;-" + lai_tmp);
+    engine.Evaluate("psoil &lt;-" + soilwc.sw[1] / soilwc.sat[1]);
 
+    // https://www.sciencedirect.com/science/article/pii/S0303243413000469
+    engine.Evaluate("cab &lt;-" + ((LeafGreenNConc * LeafGreenWt) - 0.2057) / 10);
+    engine.Evaluate("car &lt;- cab/4.11");
+    engine.Evaluate(@"n &lt;- " + n +@"
+      parameter &lt;- data.frame(N =(0.025 + (0.9*sla))/(sla-0.1),
+      LAI = " + lai_tmp + @",
+      Cab=cab,
+      Car=car,
+      Cw=runif(n,0.01,0.03),
+      Cm=(1/sla/1000),
+      Cbrown=runif(n,0.01,0.99),
+      hspot=runif(n,0.01,.2),
+      psoil=psoil
+      )");
+
+    engine.Evaluate("spectra &lt;- hsdar::PROSAIL(parameterList = parameter)");
+    engine.Evaluate(@"ss = hsdar::spectralResampling(spectra, 'Sentinel2a')");
+    //engine.Evaluate("temp &lt;- data.frame(vegindex(spectra, index=c('NDVI','OSAVI','EVI','Green NDVI', 'MSAVI','NDVI3')))");
+    engine.Evaluate(@"dd &lt;- apply(cbind(ss@spectra@spectra_ma, as.data.frame(ss@SI@SI_data)), 2, mean)");
       engine.Evaluate("specL &lt;- c(specL, spectra) ");
       return engine;
    }
