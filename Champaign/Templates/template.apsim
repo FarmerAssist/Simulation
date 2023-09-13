@@ -178,7 +178,7 @@ public class Script
          engine.Evaluate("dd$no3_"+(i+1)+" &lt;- " + Math.Round(soiln.no3[i], 2));
 
 				 // ------- soil no3
-         //engine.Evaluate("dd$oc_"+(i+1)+" &lt;- " + Math.Round(soiln.oc[i], 2));
+         engine.Evaluate("dd$oc_"+(i+1)+" &lt;- " + Math.Round(soiln.oc[i], 2));
 
          // ------- soil nh4
          //engine.Evaluate("dd$nh4_"+(i+1)+" &lt;- " + Math.Round(soiln.nh4[i], 2));
