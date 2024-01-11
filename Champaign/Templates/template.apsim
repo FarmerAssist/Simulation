@@ -255,14 +255,29 @@ public class Script
             )");
 
          engine.Evaluate("spectra &lt;- hsdar::PROSAIL(parameterList = parameter)");
-         engine.Evaluate(@"ss = hsdar::spectralResampling(spectra, 'Sentinel2a')");
+         engine.Evaluate(@"s2 = hsdar::spectralResampling(spectra, 'Sentinel2a')");
          //engine.Evaluate("temp &lt;- data.frame(vegindex(spectra, index=c('NDVI','OSAVI','EVI','Green NDVI', 'MSAVI','NDVI3')))");
-         engine.Evaluate(@"dd &lt;- as.data.frame(t(apply(cbind(as.data.frame(ss@spectra@spectra_ma ), as.data.frame(ss@SI@SI_data[1:8])), 2, mean)  ))");
+         engine.Evaluate(@"
+			s2_sr = as.data.frame(t(apply(cbind(as.data.frame(s2@spectra@spectra_ma )), 2, mean)  ))
+			colnames(s2_sr) = sapply(1:13, function(i) paste0('S2_', sprintf('B%02d', i)))
+			L8 = spectralResampling(spectra, 'Landsat8')
+			L8_sr = as.data.frame(t(apply(cbind(as.data.frame(L8@spectra@spectra_ma )), 2, mean)  ))
+			colnames(L8_sr) = sapply(1:8, function(i) paste0('L8_', sprintf('B%02d', i)))
+
+			dd &lt;-  cbind(s2_sr, L8_sr)
+
+			");
       } else{
 
          // here we have to add empty values so the row is the correct length
          engine.Evaluate("spectra &lt;- NULL");
-         engine.Evaluate(@"dd &lt;- list(V1=0, V2=0, V3=0, V4=0, V5=0, V6=0, V7=0, V8=0, V9=0, V10=0, V11=0, V12=0, V13=0, N=0, Cab=0, Car=0, Cbrown=0, Cw=0, Cm=0, psoil=0, LAI=0)");
+         engine.Evaluate(@"
+		column_names = c('S2_B01', 'S2_B02', 'S2_B03', 'S2_B04', 'S2_B05', 'S2_B06', 'S2_B07', 'S2_B08', 'S2_B09', 'S2_B10',
+		                  'S2_B11', 'S2_B12', 'S2_B13', 'L8_B01', 'L8_B02', 'L8_B03', 'L8_B04', 'L8_B05', 'L8_B06', 'L8_B07', 
+		                  'L8_B08')
+	dd &lt;- setNames(as.list(rep(0, length(column_names))), column_names)
+
+");
       }
 
       engine.Evaluate("specL &lt;- c(specL, spectra) ");
