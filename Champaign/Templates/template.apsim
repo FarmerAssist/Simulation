@@ -258,10 +258,10 @@ public class Script
          engine.Evaluate(@"s2 = hsdar::spectralResampling(spectra, 'Sentinel2a')");
          //engine.Evaluate("temp &lt;- data.frame(vegindex(spectra, index=c('NDVI','OSAVI','EVI','Green NDVI', 'MSAVI','NDVI3')))");
          engine.Evaluate(@"
-			s2_sr = as.data.frame(t(apply(cbind(as.data.frame(s2@spectra@spectra_ma )), 2, mean)  ))
+			s2_sr = as.data.frame(t(apply(cbind(as.data.frame(s2@spectra@spectra_ma)), 2, function(x) round(mean(x), 3))))
 			colnames(s2_sr) = sapply(1:13, function(i) paste0('S2_', sprintf('B%02d', i)))
 			L8 = spectralResampling(spectra, 'Landsat8')
-			L8_sr = as.data.frame(t(apply(cbind(as.data.frame(L8@spectra@spectra_ma )), 2, mean)  ))
+			L8_sr = as.data.frame(t(apply(cbind(as.data.frame(L8@spectra@spectra_ma)), 2, function(x) round(mean(x), 3))))
 			colnames(L8_sr) = sapply(1:8, function(i) paste0('L8_', sprintf('B%02d', i)))
 
 			dd &lt;-  cbind(s2_sr, L8_sr)
